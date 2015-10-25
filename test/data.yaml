@@ -1,0 +1,5 @@
+zipped_download_md5: 'a9557f2d41c417470d3dd93fea978a1a'
+unzipped_download_md5: '?'
+upload_md5: '2c75343c4a14149a324aaabb7a6ea792'
+creds: {'user': 'kparsa', 'key':'~/.ssh/id_rsa', 'host':'192.168.16.31'}
+
