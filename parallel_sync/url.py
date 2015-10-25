@@ -3,7 +3,6 @@ This module manages file operations such as parallel download
 """
 import os
 import sys
-import requests
 from multiprocessing import Pool
 from functools import partial
 import logging
