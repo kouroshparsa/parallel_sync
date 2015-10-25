@@ -12,7 +12,7 @@ def upload(src, dst, creds,\
 
 
 def download(src, dst, creds,\
-    tries=3, include=['*'], parallelism=10):
+    tries=3, include=['*'], parallelism=2):
     transfer(src, dst, creds, upstream=False,\
         tries=tries, include=include, parallelism=parallelism)
 
@@ -29,22 +29,14 @@ def transfer(src, dst, creds, upstream=True,\
         if 'key_filename' in creds:
             creds.key = os.path.expanduser(creds.key_filename[0])
 
-    cmds = []
-    for filter in include:
-        cmds.append('find {} -name "{}"'.format(src, filter))
-
-    cmd = ' && '.join(cmds)
-
-    output = ''
     if upstream:
-        executor.make_dirs(dst, creds)
-        output = executor.local(cmd)
+        srcs = executor.find_files(src, None, include=include)
     else:
-        executor.make_dirs(dst)
-        output = executor.remote(cmd, creds)
+        srcs = executor.find_files(src, creds, include=include)
 
-    srcs = list(set(output.splitlines()))
-
+    src_dirs = set([os.path.dirname(path) for path in srcs])
+    dst_dirs = [path.replace(src, dst) for path in src_dirs]
+    executor.make_dirs(dst_dirs)
     dests = []
     for path in srcs:
         path = os.path.join(dst, path[len(src) + 1:])

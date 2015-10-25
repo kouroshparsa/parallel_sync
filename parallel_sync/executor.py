@@ -126,7 +126,8 @@ def _local(curr_dir, tries, cmd):
             return output
         logging.warn('Command failed: %s', cmd)
         logging.error(err)
-        logging.info('Reattempt {}', iter + 1)
+        logging.info('Reattempt %s', iter + 1)
+    raise Exception('The following command failed: %s' % cmd)
 
 
 def make_dirs(dirs, creds=None):
@@ -142,6 +143,7 @@ def make_dirs(dirs, creds=None):
 
         for dir_path in dirs:
             if not os.path.exists(dir_path):
+                logging.info('creating %s', dir_path)
                 os.makedirs(dir_path)
     else:
         cmd = 'mkdir -p {}'.format(dirs)
@@ -149,5 +151,36 @@ def make_dirs(dirs, creds=None):
         if isinstance(dirs, list):
             cmd = '" && mkdir -p "'.join(dirs)
             cmd = 'mkdir -p "{}"'.format(cmd)
+        logging.info(cmd)
         remote(cmd, creds)
+
+
+def find_dirs(start_dir, creds, include=['*']):
+    return find(start_dir, creds, include=include, type='d')
+
+
+def find_files(start_dir, creds, include=['*']):
+    return find(start_dir, creds, include=include, type='f')
+
+
+def find(start_dir, creds, include=['*'], type='f'):
+    """
+    @include: list of wild cards for files to include
+    """
+    cmds = []
+    for pattern in include:
+        cmds.append('find {} -type {} -name "{}"'.format(start_dir, type, pattern))
+
+    cmd = ' && '.join(cmds)
+
+    output = ''
+    if creds is None:
+        output = local(cmd)
+    else:
+        output = remote(cmd, creds)
+
+    paths = list(set(output.splitlines()))
+    paths = [path.strip() for path in paths]
+    return paths
+
 
