@@ -45,6 +45,9 @@ def download(target_dir, urls, extract=False,\
         if None, it will download locally
         if not None, then wget command will be run on a remote host
     """
+    if isinstance(urls, str):
+        urls = [urls]
+
     if not isinstance(urls, list):
         raise Exception('Expected a list of urls. Received %s' % urls)
 
@@ -61,6 +64,9 @@ def download(target_dir, urls, extract=False,\
 
 def remote_download(target_dir, urls, creds, extract=False,\
     parallelism=10, overwrite=True, tries=3):
+    if isinstance(urls, str):
+        urls = [urls]
+
     cmds = []
     for _url in urls:
         filename = url_to_filename(_url)
@@ -71,6 +77,9 @@ def remote_download(target_dir, urls, creds, extract=False,\
 
 def local_download(target_dir, urls, extract=False,\
     parallelism=10, overwrite=True, tries=3):
+    if isinstance(urls, str):
+        urls = [urls]
+
     cmds = []
     for _url in urls:
         filename = url_to_filename(_url)

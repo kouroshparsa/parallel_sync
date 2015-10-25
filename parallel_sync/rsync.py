@@ -26,6 +26,8 @@ def transfer(src, dst, creds, upstream=True,\
         creds = Bunch(creds)
         if 'key' in creds:
             creds.key = os.path.expanduser(creds.key)
+        if 'key_filename' in creds:
+            creds.key = os.path.expanduser(creds.key_filename[0])
 
     cmds = []
     for filter in include:
@@ -60,7 +62,6 @@ def transfer(src, dst, creds, upstream=True,\
         if upstream:
             cmd = "{} {} {}@{}:{}".format(rsync, path, creds.user, creds.host, dests[ind])
         cmds.append(cmd)
-
     pool = Pool(processes=parallelism)
     func = partial(executor._local, None, tries)
     pool.map(func, cmds)

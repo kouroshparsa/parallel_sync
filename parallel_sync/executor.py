@@ -27,6 +27,8 @@ def remote_batch(cmds, creds, curr_dir=None, parallelism=10):
 
     client = paramiko.SSHClient()
     args = {'hostname':creds.host, 'username':creds.user}
+    if 'key_filename' in creds:
+        creds.key = os.path.expanduser(creds.key_filename[0])
     if 'key' in creds:
         key_path = os.path.expanduser(creds.key)
         key = paramiko.RSAKey.from_private_key_file(key_path)
@@ -50,6 +52,7 @@ def remote_batch(cmds, creds, curr_dir=None, parallelism=10):
             make_dirs(curr_dir, creds)
             cmd = 'cd "%s" && %s' % (curr_dir, cmd)
 
+        logging.info(cmd)
         stdout = client.exec_command(cmd)[1]
         output = stdout.read()
         logging.info(output)
@@ -65,6 +68,8 @@ def remote(cmd, creds, curr_dir=None):
 
     client = paramiko.SSHClient()
     args = {'hostname':creds.host, 'username':creds.user}
+    if 'key_filename' in creds:
+        creds.key = os.path.expanduser(creds.key_filename[0])
     if 'key' in creds:
         key_path = os.path.expanduser(creds.key)
         key = paramiko.RSAKey.from_private_key_file(key_path)
@@ -113,6 +118,7 @@ def _local(curr_dir, tries, cmd):
         cmd = 'cd "%s" && %s' % (curr_dir, cmd)
 
     for iter in range(tries):
+        logging.info(cmd)
         proc = subprocess.Popen(cmd, shell=True,\
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output, err = proc.communicate()
