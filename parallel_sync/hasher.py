@@ -1,10 +1,7 @@
 """
 This module is used for hashing files and folders
 """
-import md5
-import os
 from parallel_sync import executor
-import subprocess
 
 def get_md5(path, creds=None):
     """
@@ -13,11 +10,12 @@ def get_md5(path, creds=None):
     on the remote host
     """
 
-    cmd = "find %s -type f -exec md5sum {} \; | awk {'print $1'} | sort | md5sum" % path
+    cmd = "find %s -type f -exec md5sum {} \\; | awk {'print $1'} | sort | md5sum" % path
+    hash_val = ''
     if creds is None:
-        hash = executor.local(cmd)
+        hash_val = executor.local(cmd)
     else:
-        hash = executor.remote(cmd, creds)
-    return hash[:hash.find(' ')]
+        hash_val = executor.remote(cmd, creds)
+    return hash_val[:hash_val.find(' ')]
 
 

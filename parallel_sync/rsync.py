@@ -1,24 +1,28 @@
-import parallel_sync as psync
+"""
+This module copies files in parallel up or down stream
+from or to a remote host
+"""
 from parallel_sync import executor
 import os
 from bunch import Bunch
 from multiprocessing import Pool
 from functools import partial
+import signal
 
 def upload(src, dst, creds,\
-    tries=3, include=['*'], parallelism=10):
+    tries=3, include=None, parallelism=10):
     transfer(src, dst, creds, upstream=True,\
         tries=tries, include=include, parallelism=parallelism)
 
 
 def download(src, dst, creds,\
-    tries=3, include=['*'], parallelism=2):
+    tries=3, include=None, parallelism=10):
     transfer(src, dst, creds, upstream=False,\
         tries=tries, include=include, parallelism=parallelism)
 
 
 def transfer(src, dst, creds, upstream=True,\
-    tries=3, include=['*'], parallelism=10):
+    tries=3, include=None, parallelism=10):
     """
     @parallelism(default=10): number of parallel processes to use
     """
@@ -36,7 +40,7 @@ def transfer(src, dst, creds, upstream=True,\
 
     src_dirs = set([os.path.dirname(path) for path in srcs])
     dst_dirs = [path.replace(src, dst) for path in src_dirs]
-    executor.make_dirs(dst_dirs)
+    executor.make_dirs(dst_dirs, creds=creds)
     dests = []
     for path in srcs:
         path = os.path.join(dst, path[len(src) + 1:])
@@ -54,19 +58,14 @@ def transfer(src, dst, creds, upstream=True,\
         if upstream:
             cmd = "{} {} {}@{}:{}".format(rsync, path, creds.user, creds.host, dests[ind])
         cmds.append(cmd)
-    pool = Pool(processes=parallelism)
+    pool = Pool(parallelism, init_worker)
     func = partial(executor._local, None, tries)
     pool.map(func, cmds)
     pool.close()
     pool.join()
 
 
-def __remove_zip_ext(path):
-    """ given a @path, returns the path without the .tar.gz or .gz extension
-    """
-    if path.endswith('.tar.gz'):
-        return path[:-7]
-    if path.endswith('.gz'):
-        return path[:-3]
-    return path
+def init_worker():
+    """ use this initializer for process Pools to allow keyboard interrupts """
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
