@@ -88,5 +88,4 @@ rsync.download('/tmp/y', '/tmp/z', creds=env)
 
 
 If you come across any bugs, please report it on github.
-I will be adding more features such as file extraction soon.
 
