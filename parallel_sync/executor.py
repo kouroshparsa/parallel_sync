@@ -17,6 +17,7 @@ import paramiko
 from bunch import Bunch
 import Queue
 import signal
+SSH_TIMEOUT = int(os.getenv('SSH_TIMEOUT', '10'))
 
 def run(cmds, creds=None, curr_dir=None, parallelism=10):
     """ runs commands on the remote machine in parallel
@@ -68,6 +69,7 @@ def remote_batch(cmds, creds, curr_dir=None, parallelism=10):
 
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    args['timeout'] = SSH_TIMEOUT
     client.connect(**args)
 
     while not cmd_q.empty():
@@ -109,6 +111,7 @@ def remote(cmd, creds, curr_dir=None):
 
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    args['timeout'] = SSH_TIMEOUT
     client.connect(**args)
     if curr_dir is not None:
         make_dirs(curr_dir, creds)

@@ -36,16 +36,16 @@ rsync.download('/tmp/y', '/tmp/z', creds=creds)
 
 File Download Example:
 ```
-from parallel_sync import url as _url
+from parallel_sync import wget
 urls = ['http://something.png', 'http://somthing.tar.gz', 'http://somthing.zip']
-_url.download('/tmp', urls=urls, extract=True)
+wget.download('/tmp', urls=urls, extract=True)
 
 # download on a remote machine:
 creds = {'user': 'myusername', 'key':'~/.ssh/id_rsa', 'host':'192.168.16.31'}
-_url.download('/tmp', urls=urls, creds=creds)
+wget.download('/tmp', urls=urls, creds=creds)
 
 # To untar or unzip compressed files after download:
-_url.download('/tmp', urls=urls, creds=creds, extract=True)
+wget.download('/tmp', urls=urls, creds=creds, extract=True)
 ```
 
 Example extracting a file on a remote host:
