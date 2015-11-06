@@ -40,7 +40,12 @@ def transfer(src, dst, creds, upstream=True,\
 
     src_dirs = set([os.path.dirname(path) for path in srcs])
     dst_dirs = [path.replace(src, dst) for path in src_dirs]
-    executor.make_dirs(dst_dirs, creds=creds)
+
+    if upstream:
+        executor.make_dirs(dst_dirs, creds=creds)
+    else:
+        executor.make_dirs(dst_dirs)
+
     dests = []
     for path in srcs:
         path = os.path.join(dst, path[len(src) + 1:])

@@ -12,8 +12,8 @@ from parallel_sync import executor
 import yaml
 TEST_DATA = yaml.load(open(os.path.join(BASE_DIR, "data.yaml"), 'r'))
 TEST_DATA = Bunch(TEST_DATA)
-LOCAL_TARGET = '/tmp/images'
-REMOTE_TARGET = '/tmp/test_dir/y'
+LOCAL_TARGET = '/tmp/123/images'
+REMOTE_TARGET = '/tmp/test_dir/567'
 
 class TestFeatures(unittest.TestCase):
     @classmethod
