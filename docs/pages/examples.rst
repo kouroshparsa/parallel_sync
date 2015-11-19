@@ -1,14 +1,18 @@
 parallel_sync Usage
-==========
+===================
 
 parallel_sync is a python package for uploading or downloading files using multiprocessing and md5 checks on Linux.
 The files can be transferred from a remote linux host or a url.
 
 Benefits:
-- Very fast file transfer (parallelized)
-- If the file exists and is not changed, it will not waste time copying it
-- You can specify retries in case you have a bad connection
-- It can handle large files
+* Very fast file transfer (parallelized)
+* If the file exists and is not changed, it will not waste time copying it
+* You can specify retries in case you have a bad connection
+* It can handle large files
+
+In most of the examples below, you can specify **parallelism** and **tries** which allow you to parallelize tasks and retry upon failure.
+By default **parallelism** is set to 10 workers.
+
 
 Upstream Example:
 ::
@@ -76,6 +80,7 @@ Example using parallel_sync within fabric:
     rsync.download('/tmp/y', '/tmp/z', creds=env)
 
 
-
-If you come across any bugs, please report it on github.
+.. _github-link: https://github.com/kouroshparsa/parallel_sync
+If you come across any bugs, please report it on
+   https://github.com/kouroshparsa/parallel_sync
 
