@@ -17,11 +17,13 @@ def __url_to_filename(url):
     return filename
 
 
-def download(target_dir, urls,\
+def download(target_dir, urls, filenames=None,\
     parallelism=10, creds=None, tries=3, extract=False):
     """ downloads large files either locally or on a remote machine
     @target_dir: where to download to
     @urls: a list of urls or a single url
+    @filenames: list of filenames. If used, the the urls will be downloaded to
+        those file names
     @parallelism(default=10): number of parallel processes to use
     @creds: dictionary with credentials
         if None, it will download locally
@@ -38,8 +40,18 @@ def download(target_dir, urls,\
         os.makedirs(target_dir)
 
     cmds = []
-    for _url in urls:
-        filename = __url_to_filename(_url)
+    if filenames is None:
+        filenames = [__url_to_filename(_url) for _url in urls]
+
+    if isinstance(filenames, str):
+        filenames = [filenames]
+
+    if len(filenames) != len(urls):
+        raise Exception('You have specified filenames but the number of filenames '\
+            'does not match the number of urls')
+
+    for ind, _url in enumerate(urls):
+        filename = filenames[ind]
         file_path = os.path.join(target_dir, filename)
         cmd = 'wget -O "{}" -t {} -T {} -q "{}"'.format(file_path, tries, TIMEOUT, _url)
         if extract:

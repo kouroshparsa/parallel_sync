@@ -20,6 +20,9 @@ Benefits:
 - You can specify retries in case you have a bad connection
 - It can handle large files
 
+In most of the examples below, you can specify `parallelism` and `tries` which allow you to parallelize tasks and retry upon failure.
+By default `parallelism` is set to 10 workers.
+
 Upstream Example:
 ```
 from parallel_sync import rsync
@@ -39,6 +42,10 @@ File Download Example:
 from parallel_sync import wget
 urls = ['http://something.png', 'http://somthing.tar.gz', 'http://somthing.zip']
 wget.download('/tmp', urls=urls, extract=True)
+
+# download locally with a specified filename:
+wget.download(LOCAL_TARGET, 'http://something/else/file.zip',\
+              filenames='x.zip', extract=True)
 
 # download on a remote machine:
 creds = {'user': 'myusername', 'key':'~/.ssh/id_rsa', 'host':'192.168.16.31'}

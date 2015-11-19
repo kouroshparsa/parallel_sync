@@ -15,7 +15,7 @@ Link
 """
 from setuptools import Command, setup, find_packages
 
-version = '1.6'
+version = '1.7'
 import sys
 setup(
     name='parallel_sync',

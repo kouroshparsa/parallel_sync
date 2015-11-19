@@ -2,7 +2,7 @@ import unittest
 import os, sys
 import shutil
 from bunch import Bunch
-
+from glob import glob
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.realpath('%s/..' % BASE_DIR))
 from parallel_sync import wget
@@ -10,6 +10,7 @@ from parallel_sync import hasher
 from parallel_sync import rsync
 from parallel_sync import executor
 import yaml
+
 TEST_DATA = yaml.load(open(os.path.join(BASE_DIR, "data.yaml"), 'r'))
 TEST_DATA = Bunch(TEST_DATA)
 LOCAL_TARGET = '/tmp/123/images'
@@ -79,6 +80,13 @@ class TestFeatures(unittest.TestCase):
            'remote download failed. Expected: {}, Actual: {}'\
            .format(TEST_DATA.download_md5, act_hash)
 
+
+    def test_local_download_urls_extract(self):
+        shutil.rmtree(LOCAL_TARGET)
+        wget.download(LOCAL_TARGET, TEST_DATA.zip_url,\
+                      filenames='x.zip', extract=True)
+        assert len(glob('{}/*.xml'.format(LOCAL_TARGET))) > 0, 'Failed to dowload/extract the url.'
+        shutil.rmtree(LOCAL_TARGET)
 
 
     def test_run(self):

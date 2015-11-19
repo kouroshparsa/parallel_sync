@@ -1,4 +1,5 @@
 download_md5: 'b4f47dbda14e1bf0c0f3aa3a3f5e4e5e'
 download_md5_extracted: '052dae00967c8004a57a330c0fa0deb9'
 creds: {'user': 'kparsa', 'key':'~/.ssh/id_rsa', 'host':'192.168.168.31'}
+zip_url: 'https://clinicaltrials.gov/ct2/results/download?down_stds=all&down_typ=results&down_flds=all&down_fmt=xml&recr=Open&cntry1=NA%3ACA&state1=NA%3ACA%3ABC&show_down=Y'
 
