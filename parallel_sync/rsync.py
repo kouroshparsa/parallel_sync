@@ -48,7 +48,10 @@ def transfer(src, dst, creds, upstream=True,\
 
     dests = []
     for path in srcs:
-        path = os.path.join(dst, path[len(dst) + 1:])
+        if path[:len(src)].endswith('/'):
+            path = os.path.join(dst, path[len(src):])
+        else:
+            path = os.path.join(dst, path[len(src) + 1:])
         dests.append(path)
 
 
