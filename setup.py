@@ -19,7 +19,8 @@ from distutils import sysconfig;
 inc_path = sysconfig.get_config_vars()['INCLUDEPY']
 if not os.path.exists(os.path.join(inc_path, 'Python.h')):
     raise Exception('You must install python headers to install the Paramiko dependency.'\
-        ' Example on centos: sudo yum install python-dev')
+        '\nExample on ubuntu: sudo apt-get install python-dev'\
+        '\nExample on centos: sudo yum install python-dev')
 
 version = '1.8.2'
 import sys
