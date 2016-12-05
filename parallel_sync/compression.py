@@ -36,15 +36,15 @@ def extract(target_path, creds=None):
                                 get_unzip_cmd(filename),\
                                 filename))
 
-    else: #directory
-        files = executor.find_files(target_path, include=['*.gz', '*.zip'])
+    else: # directory
+        files = executor.find_files(target_path, creds, include=['*.gz', '*.zip'])
         for path in files:
-            target_dir = os.path.dirname(target_path)
-            filename = os.path.basename(target_path)
-            cmds.append('cd {}; {} {}'\
-                        .format(target_dir,\
-                                get_unzip_cmd(filename),\
-                                filename))
+            target_dir = os.path.dirname(path)
+            filename = os.path.basename(path)
+            unzip_cmd = get_unzip_cmd(filename)
+            if unzip_cmd is not None:
+                cmds.append('cd {}; {} {}'\
+                    .format(target_dir, unzip_cmd, filename))
 
     executor.run(cmds, creds)
 

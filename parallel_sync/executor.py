@@ -268,3 +268,12 @@ def path_exists(path, creds=None):
                 traceback.print_exc()
             return False
 
+
+def is_file(path, creds=None):
+    """
+    @path: string
+    returns a boolean
+    """
+    res = run(['if [ -f "{}" ]; then echo "true";fi'.format(path)], creds=creds)
+    return res != None and len(res) > 0
+
