@@ -19,7 +19,7 @@ def upload(src, dst, creds,\
 def download(src, dst, creds,\
     tries=3, include=None, parallelism=10, extract=False):
     transfer(src, dst, creds, upstream=False,\
-        tries=tries, include=include, parallelism=parallelism, extact=extract)
+        tries=tries, include=include, parallelism=parallelism, extract=extract)
 
 
 def transfer(src, dst, creds, upstream=True,\
