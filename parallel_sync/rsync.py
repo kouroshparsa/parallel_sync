@@ -38,6 +38,10 @@ def transfer(src, dst, creds, upstream=True,\
     else:
         srcs = executor.find_files(src, creds, include=include)
 
+    if len(srcs) < 1:
+        print('No source files found to transfer.')
+        return
+
     src_dirs = set([os.path.dirname(path) for path in srcs])
     dst_dirs = [path.replace(src, dst) for path in src_dirs]
     dst_dirs = [path for path in dst_dirs if path not in ['', '/']]

@@ -250,7 +250,7 @@ def find(start_dir, creds, include=None, ftype='f', delete=False):
         output = remote(cmd, creds)
 
     paths = list(set(output.splitlines()))
-    paths = [path.strip() for path in paths]
+    paths = [path.strip() for path in paths if len(path.strip()) > 0]
     return paths
 
 
