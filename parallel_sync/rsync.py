@@ -40,6 +40,7 @@ def transfer(src, dst, creds, upstream=True,\
 
     src_dirs = set([os.path.dirname(path) for path in srcs])
     dst_dirs = [path.replace(src, dst) for path in src_dirs]
+    dst_dirs = [path for path in dst_dirs if path not in ['', '/']]
 
     if upstream:
         executor.make_dirs(dst_dirs, creds=creds)
