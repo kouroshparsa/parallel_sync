@@ -17,7 +17,7 @@ def get_unzip_cmd(path):
 
 def extract(target_path, creds=None):
     """
-    unzipps or untars a files of multiple files under a directory
+    unzipps or untars a files or multiple files under a directory
         either locally or on a remote host
     @target_path: string - directory or file path
     @creds: a dictionary or Bunch object used for remote execution

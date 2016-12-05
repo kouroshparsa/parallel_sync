@@ -8,22 +8,24 @@ from bunch import Bunch
 from multiprocessing import Pool
 from functools import partial
 import signal
+import compression
 
 def upload(src, dst, creds,\
-    tries=3, include=None, parallelism=10):
+    tries=3, include=None, parallelism=10, extract=False):
     transfer(src, dst, creds, upstream=True,\
-        tries=tries, include=include, parallelism=parallelism)
+        tries=tries, include=include, parallelism=parallelism, extract=extract)
 
 
 def download(src, dst, creds,\
-    tries=3, include=None, parallelism=10):
+    tries=3, include=None, parallelism=10, extract=False):
     transfer(src, dst, creds, upstream=False,\
-        tries=tries, include=include, parallelism=parallelism)
+        tries=tries, include=include, parallelism=parallelism, extact=extract)
 
 
 def transfer(src, dst, creds, upstream=True,\
-    tries=3, include=None, parallelism=10):
+    tries=3, include=None, parallelism=10, extract=False):
     """
+    @extract: boolean - whether to extract tar or zip files after transfer
     @parallelism(default=10): number of parallel processes to use
     """
     if isinstance(creds, dict):
@@ -76,7 +78,8 @@ def transfer(src, dst, creds, upstream=True,\
     pool.map(func, cmds)
     pool.close()
     pool.join()
-
+    if extract:
+        compression.extract(dst, creds=creds)
 
 def init_worker():
     """ use this initializer for process Pools to allow keyboard interrupts """

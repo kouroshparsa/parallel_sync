@@ -58,7 +58,7 @@ wget.download('/tmp', urls=urls, creds=creds, extract=True)
 Example extracting a file on a remote host:
 ```
 creds = {'user': 'myusername', 'key':'~/.ssh/id_rsa', 'host':'192.168.16.31'}
-rom parallel_sync import compression
+from parallel_sync import compression
 compression.extract('/tmp/x.tar.gz', creds=creds)
 ```
 
