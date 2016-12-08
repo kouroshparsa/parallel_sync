@@ -23,7 +23,8 @@ def extract(target_path, creds=None):
     @creds: a dictionary or Bunch object used for remote execution
     """
     if not executor.path_exists(target_path, creds):
-        raise Exception('Invalid path: %s' % target_path)
+        logging.warn('Invalid path: %s' % target_path)
+        return
 
     cmds = []
     if executor.is_file(target_path, creds):
