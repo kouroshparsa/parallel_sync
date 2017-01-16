@@ -5,7 +5,7 @@ It can do operations in parallel batches as well
 """
 import os
 import sys
-from multiprocessing import Pool
+from multiprocessing.pool import ThreadPool
 from functools import partial
 import logging
 import subprocess
@@ -16,7 +16,7 @@ sys.path.append(os.path.realpath("{}/..".format(BASE_DIR)))
 import paramiko
 from bunch import Bunch
 import Queue
-import signal
+import re
 SSH_TIMEOUT = int(os.getenv('SSH_TIMEOUT', '10'))
 
 def run(cmds, creds=None, curr_dir=None, parallelism=10):
@@ -125,11 +125,6 @@ def remote(cmd, creds, curr_dir=None):
     return output
 
 
-def init_worker():
-    """ use this Pool initializer to allow keyboard interruption """
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-
-
 def local_batch(cmds, curr_dir=None, tries=1, parallelism=10):
     """ runs a command on the local machine
     @cmds: list of commands to run
@@ -137,7 +132,7 @@ def local_batch(cmds, curr_dir=None, tries=1, parallelism=10):
     @tries: int - number of times to try the command
     """
     make_dirs(curr_dir)
-    pool = Pool(parallelism, init_worker)
+    pool = ThreadPool(processes=parallelism)
     func = partial(_local, curr_dir, tries)
     pool.map(func, cmds)
     pool.close()
@@ -177,7 +172,7 @@ def delete_dir(path, creds=None):
     run('rm -rf {}'.format(path), creds=creds)
 
 
-def delete_files(start_dir, creds=None, include=None):
+def delete_files(start_dir, creds=None, include=[], exclude=[]):
     """
     deletes files on the local or remote host
     @start_dir: start directory
@@ -186,7 +181,11 @@ def delete_files(start_dir, creds=None, include=None):
         otherwise they will be created on the remote host
     @include: list of patterns of files to include
     """
-    find(start_dir, creds, include=include, ftype='f', delete=True)
+    cmds = []
+    for path in find(start_dir, creds, include=include, exclude=exclude, ftype='f'):
+        cmds.append('rm "{}"'.format(path))
+    if len(cmds) > 0:
+        local_batch(cmds)
 
 
 def make_dirs(dirs, creds=None):
@@ -214,43 +213,60 @@ def make_dirs(dirs, creds=None):
         remote(cmd, creds)
 
 
-def find_dirs(start_dir, creds, include=None):
-    """ returns a list of directories using the patterns in the include list """
-    return find(start_dir, creds, include=include, ftype='d')
+def find_dirs(start_dir, creds, include=[], exclude=[]):
+    """ returns a list of directories """
+    return find(start_dir, creds, include=[], exclude=exclude, ftype='d')
 
 
-def find_files(start_dir, creds, include=None):
-    """ returns a list of files using the patterns in the include list """
-    return find(start_dir, creds, include=include, ftype='f')
+def find_files(start_dir, creds, include=[], exclude=[]):
+    """ returns a list of files """
+    return find(start_dir, creds, include=include, exclude=exclude, ftype='f')
 
 
-def find(start_dir, creds, include=None, ftype='f', delete=False):
+def __make_patterns(patterns):
+    res = []
+    for pat in patterns:
+        if '*' in pat:
+            res.append('.*/{}/?$'.format(re.escape(pat).replace('\*', '.*')))
+        else:
+            res.append('.*/{}/'.format(re.escape(pat)))
+    return res
+
+
+def find(start_dir, creds, include=[], exclude=[], ftype='f'):
     """
-    @include: list of wild cards for files to include
+    @exclude: list of wild card patterns
     """
-    if include is None:
-        include = ['*']
-
-    del_cmd = ''
-    if delete:
-        del_cmd = ' -delete'
-
-    cmds = []
-    for pattern in include:
-        cmds.append('find {} -type {} -name "{}{}"'\
-                    .format(start_dir, ftype,\
-                            pattern, del_cmd))
-
-    cmd = ' && '.join(cmds)
-
+    cmd = 'find "{}" -type {}'.format(start_dir, ftype)
     output = ''
     if creds is None:
         output = local(cmd)
     else:
         output = remote(cmd, creds)
 
-    paths = list(set(output.splitlines()))
-    paths = [path.strip() for path in paths if len(path.strip()) > 0]
+    include2 = __make_patterns(include)
+    exclude2 = __make_patterns(exclude)
+    paths = []
+    for path in output.splitlines():
+        skipit = False
+        if len(include2) > 0:
+            skipit = True
+
+        for pat in include2:
+            if re.match(pat, path[len(start_dir):]):
+                skipit = False
+                break
+
+        if skipit:
+            continue
+
+        for pat in exclude2:
+            if re.match(pat, path[len(start_dir):]):
+                skipit = True
+                break
+
+        if not skipit:
+            paths.append(path)
     return paths
 
 

@@ -27,7 +27,7 @@ Upstream Example:
 ```
 from parallel_sync import rsync
 creds = {'user': 'myusername', 'key':'~/.ssh/id_rsa', 'host':'192.168.16.31'}
-rsync.upload('/tmp/x', '/tmp/y', creds=creds)
+rsync.upload('/tmp/x', '/tmp/y', creds=creds, exclude=['*.pyc', '*.sh'])
 ```
 
 Downstream Example:
