@@ -109,7 +109,7 @@ def transfer(src, dst, creds, upstream=True,\
                 if path.endswith('.gz'):
                     cmds.append('gunzip "{}"'.format(path))
             if len(cmds) > 0:
-                executor.remote_batch(cmds)
+                executor.remote_batch(cmds, creds)
         else:
             cmds = []
             for path in srcs:
