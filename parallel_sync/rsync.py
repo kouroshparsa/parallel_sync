@@ -65,34 +65,51 @@ def transfer(src, dst, creds, upstream=True,\
         logging.warn('No source files found to transfer.')
         return
 
-    src_dirs = set([os.path.dirname(path) for path in srcs])
-    dst_dirs = [path.replace(src, dst) for path in src_dirs]
-    dst_dirs = [path for path in dst_dirs if path not in ['', '/']]
-
-    if upstream:
-        executor.make_dirs(dst_dirs, creds=creds)
-    else:
-        executor.make_dirs(dst_dirs)
-
-    dests = []
+    paths = []
     for path in srcs:
-        if path[:len(src)].endswith('/'):
-            path = os.path.join(dst, path[len(src):])
-        else:
-            path = os.path.join(dst, path[len(src) + 1:])
-        dests.append(path)
+        dst_path = path[len(src):]
+        if dst.endswith('/'):
+            dst_path = dst_path[1:]
+        dst_path = os.path.join(dst, dst_path)
+        paths.append((path, dst_path))
+
+    transfer_paths(paths, creds, upstream,\
+        tries=tries, parallelism=parallelism, extract=extract,\
+        validate=validate, additional_params=additional_params)
 
 
+def __make_dirs(paths, creds, upstream):
+    dirs = [os.path.dirname(path[1]) for path in paths]
+    if upstream:
+        executor.make_dirs(dirs, creds=creds)
+    else:
+        executor.make_dirs(dirs)
+
+
+def transfer_paths(paths, creds, upstream=True, tries=3,\
+    include=[], exclude=[], parallelism=10, extract=False,\
+    validate=False, additional_params='-c'):
+    """
+    @paths: list of tuples of (source_path, dest_path)
+    """
+    if isinstance(creds, dict):
+        creds = Bunch(creds)
+        if 'key' in creds:
+            creds.key = os.path.expanduser(creds.key)
+        if 'key_filename' in creds:
+            creds.key = os.path.expanduser(creds.key_filename[0])
+
+    __make_dirs(paths, creds, upstream)
     rsync = "rsync {} -e 'ssh"\
             " -o StrictHostKeyChecking=no"\
             " -o ServerAliveInterval=100"\
             " -i {}'".format(additional_params, creds.key)
 
     cmds = []
-    for ind, path in enumerate(srcs):
-        cmd = "{} {}@{}:{} {}".format(rsync, creds.user, creds.host, path, dests[ind])
+    for src, dst in paths:
+        cmd = "{} {}@{}:{} {}".format(rsync, creds.user, creds.host, src, dst)
         if upstream:
-            cmd = "{} {} {}@{}:{}".format(rsync, path, creds.user, creds.host, dests[ind])
+            cmd = "{} {} {}@{}:{}".format(rsync, src, creds.user, creds.host, dst)
         cmds.append(cmd)
 
     pool = ThreadPool(processes=parallelism)
@@ -105,14 +122,14 @@ def transfer(src, dst, creds, upstream=True,\
         logging.info('File extraction...')
         if upstream:
             cmds = []
-            for path in dests:
+            for _, path in paths:
                 if path.endswith('.gz'):
                     cmds.append('gunzip "{}"'.format(path))
             if len(cmds) > 0:
                 executor.remote_batch(cmds, creds)
         else:
             cmds = []
-            for path in srcs:
+            for _, path in paths:
                 if path.endswith('.gz'):
                     cmds.append('gunzip "{}"'.format(path))
             if len(cmds) > 0:
