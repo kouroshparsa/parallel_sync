@@ -22,7 +22,7 @@ if not os.path.exists(os.path.join(inc_path, 'Python.h')):
         '\nExample on ubuntu: sudo apt-get install python-dev'\
         '\nExample on centos: sudo yum install python-dev')
 
-version = '1.11.0'
+version = '1.11.1'
 import sys
 setup(
     name='parallel_sync',
