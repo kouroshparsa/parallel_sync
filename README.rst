@@ -81,8 +81,11 @@ Example finding files or directories:
 
 ```
 from parallel_sync import executor
+
 files = executor.find_files(dir_path, creds, include=['*.png', '*.jpg'])
+
 dirs = executor.find_dirs(dir_path, creds, include=['test'])
+
 # Note that if creds is None, then it will search on localhost
 ```
 
@@ -90,8 +93,11 @@ Example Running commands:
 
 ```
 from parallel_sync import executor
+
 cmds = ['mv /tmp/x /tmp/y', 'touch /tmp/z']
-executor.run(cmds, creds=creds, parallelism=len(cmds)):
+
+executor.run(cmds, creds=creds, parallelism=len(cmds))
+
 print executor.run('pwd', creds=creds, curr_dir='/tmp')
 ```
 
@@ -99,8 +105,11 @@ Example using parallel_sync within fabric:
 
 ```
 from fabric.api import env
+
 from parallel_sync import rsync
+
 rsync.upload('/tmp/x', '/tmp/y', creds=env)
+
 rsync.download('/tmp/y', '/tmp/z', creds=env)
 ```
 
@@ -109,6 +118,7 @@ To transfer files locally:
 ```
 
 from parallel_sync import rsync
+
 rsync.copy('/tmp/x', '/tmp/y', exclude=['*.pyc'], parallelism=10, extract=False, validate=False)
 ```
 
