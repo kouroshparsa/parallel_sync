@@ -57,7 +57,7 @@ def download(target_dir, urls, filenames=None,\
         if extract:
             ext = compression.get_unzip_cmd(file_path)
             if ext is not None:
-                cmd = "{};cd {};{} {}".format(cmd, target_dir, ext, filename)
+                cmd = '{};cd "{}";{} "{}"'.format(cmd, target_dir, ext, filename)
         cmds.append(cmd)
     executor.run(cmds, parallelism=parallelism, curr_dir=target_dir, creds=creds)
 

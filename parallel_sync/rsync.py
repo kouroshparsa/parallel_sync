@@ -10,6 +10,9 @@ from functools import partial
 import compression
 import logging
 logging.basicConfig(level='INFO')
+import hashlib
+import shutil
+import re
 
 def upload(src, dst, creds,\
     tries=3, include=[], exclude=[], parallelism=10, extract=False,\
@@ -89,7 +92,7 @@ def __make_dirs(paths, creds, upstream):
 
 
 def transfer_paths(paths, creds, upstream=True, tries=3,\
-    include=[], exclude=[], parallelism=10, extract=False,\
+    parallelism=10, extract=False,\
     validate=False, additional_params='-c'):
     """
     @paths: list of tuples of (source_path, dest_path)
@@ -109,9 +112,9 @@ def transfer_paths(paths, creds, upstream=True, tries=3,\
 
     cmds = []
     for src, dst in paths:
-        cmd = "{} {}@{}:{} {}".format(rsync, creds.user, creds.host, src, dst)
+        cmd = '{} {}@{}:"{}" "{}"'.format(rsync, creds.user, creds.host, src, dst)
         if upstream:
-            cmd = "{} {} {}@{}:{}".format(rsync, src, creds.user, creds.host, dst)
+            cmd = '{} "{}" {}@{}:"{}"'.format(rsync, src, creds.user, creds.host, dst)
         cmds.append(cmd)
 
     pool = ThreadPool(processes=parallelism)
@@ -158,4 +161,85 @@ def checksum_validator(creds, paths):
     if checksum1 != checksum2:
         raise Exception('checksum mismatch for %s' % paths)
 
+
+
+def path_match(path, include=[], exclude=[]):
+    if include is None:
+        include = []
+    if exclude is None:
+        exclude = []
+    for patt in include:
+        if not re.match(patt.replace('*', '.*'), path):
+            return False
+
+    for patt in exclude:
+        if re.match(patt.replace('*', '.*'), path):
+            return False
+
+    return True
+
+
+def copy(src_dir, dst_dir, include=[], exclude=[], parallelism=10,\
+    extract=False, validate=False):
+    paths = []
+    if os.path.isfile(src_dir):
+        paths = [(src_dir,)]
+    else:
+        for root, subdirs, files in os.walk(src_dir):
+            for filename in files:
+                path = os.path.join(root, filename)
+                if path_match(path, include, exclude):
+                    x = path[len(src_dir):]
+                    if x.startswith('/'):
+                        x = x[1:]
+                    dst = os.path.join(dst_dir, x)
+                    paths.append((path, dst))
+
+    local_copy(paths, parallelism=parallelism,\
+        extract=extract, validate=validate)
+
+
+def _copyfile(src_dst):
+    shutil.copyfile(src_dst[0], src_dst[1])
+
+def local_copy(paths, parallelism=10, extract=False, validate=False):
+    """
+    @paths: list of tuples of (source_path, dest_path)
+    """
+    for src, dst in paths:
+        dst_dir = os.path.dirname(os.path.expanduser(dst))
+        if not os.path.exists(dst_dir):
+            os.makedirs(dst_dir)
+
+    if len(paths) < 1:
+        return
+
+    pool = ThreadPool(processes=parallelism)
+    pool.map(_copyfile, paths)
+    pool.close()
+    pool.join()
+
+    if extract:
+        logging.info('File extraction...')
+        for _, path in paths:
+            if path.endswith('.gz'):
+                executor.local_batch('gunzip "{}"'.format(path))
+
+    if validate and len(srcs) > 0:
+        logging.info('Checksum validation...')
+        func = partial(local_checksum_validator)
+        pool.map(func, paths)
+        pool.close()
+        pool.join()
+
+
+def local_checksum_validator(paths):
+    """
+    @paths: list of tuples of (source_path, dest_path)
+    """
+    for src, dst in paths:
+        checksum1 = hashlib.md5(open(src, 'rb').read()).hexdigest()
+        checksum2 = hashlib.md5(open(dst, 'rb').read()).hexdigest()
+        if checksum1 != checksum2:
+            raise Exception('checksum mismatch for\n{}\n{}'.format(src, dst))
 

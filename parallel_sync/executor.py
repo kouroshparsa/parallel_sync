@@ -17,6 +17,7 @@ import paramiko
 from bunch import Bunch
 import Queue
 import signal
+import re
 SSH_TIMEOUT = int(os.getenv('SSH_TIMEOUT', '10'))
 
 def run(cmds, creds=None, curr_dir=None, parallelism=10):
@@ -240,7 +241,7 @@ def find(start_dir, creds, include=None, exclude=None, ftype='f', delete=False):
 
     cmds = []
     for pattern in include:
-        cmds.append('find {} -type {} -name "{}{}"'\
+        cmds.append('find "{}" -noleaf -type {} -name "{}{}"'\
                     .format(start_dir, ftype,\
                             pattern, del_cmd))
 
@@ -253,8 +254,16 @@ def find(start_dir, creds, include=None, exclude=None, ftype='f', delete=False):
         output = remote(cmd, creds)
 
     paths = list(set(output.splitlines()))
-    paths = [path.strip() for path in paths]
-    return paths
+    res = []
+    if exclude is None or len(exclude) < 1:
+        res = [path.strip() for path in paths]
+    else:
+        exclude_pat = '|'.join(exclude).replace('*', '.*')
+        for path in paths:
+            path = path.strip()
+            if not re.match(exclude_pat, path):
+                res.append(path)
+    return res
 
 
 def path_exists(path, creds=None):
@@ -263,7 +272,7 @@ def path_exists(path, creds=None):
         return os.path.exists(path)
     else:
         try:
-            cmd = 'ls {}'.format(path)
+            cmd = 'ls "{}"'.format(path)
             print remote(cmd, creds)
             return True
         except Exception as ex:

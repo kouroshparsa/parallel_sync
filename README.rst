@@ -93,6 +93,13 @@ rsync.upload('/tmp/x', '/tmp/y', creds=env)
 rsync.download('/tmp/y', '/tmp/z', creds=env)
 ```
 
+To transfer files locally:
+```
+from parallel_sync import rsync
+rsync.copy('/tmp/x', '/tmp/y', exclude=['*.pyc'], parallelism=10, extract=False, validate=False)
+```
+where /tmp/x is a directory.
+
 
 If you come across any bugs, please report it on github.
 
