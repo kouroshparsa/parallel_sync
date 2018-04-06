@@ -60,11 +60,16 @@ def remote_batch(cmds, creds, curr_dir=None, parallelism=10):
     client = paramiko.SSHClient()
     args = {'hostname':creds.host, 'username':creds.user}
     if 'key_filename' in creds:
-        creds.key = os.path.expanduser(creds.key_filename[0])
+        path = creds.key_filename
+        if isinstance(path, list):
+            path = path[0]
+        creds.key = os.path.expanduser(path)
+
     if 'key' in creds:
         key_path = os.path.expanduser(creds.key)
         key = paramiko.RSAKey.from_private_key_file(key_path)
         args['pkey'] = key
+
     if 'password' in creds:
         args['password'] = creds.password
 
@@ -102,7 +107,10 @@ def remote(cmd, creds, curr_dir=None):
     client = paramiko.SSHClient()
     args = {'hostname':creds.host, 'username':creds.user}
     if 'key_filename' in creds:
-        creds.key = os.path.expanduser(creds.key_filename[0])
+        path = creds.key_filename
+        if isinstance(path, list):
+            path = path[0]
+        creds.key = os.path.expanduser(path)
     if 'key' in creds:
         key_path = os.path.expanduser(creds.key)
         key = paramiko.RSAKey.from_private_key_file(key_path)

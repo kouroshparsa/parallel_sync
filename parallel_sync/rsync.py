@@ -57,7 +57,10 @@ def transfer(src, dst, creds, upstream=True,\
         if 'key' in creds:
             creds.key = os.path.expanduser(creds.key)
         if 'key_filename' in creds:
-            creds.key = os.path.expanduser(creds.key_filename[0])
+            path = creds.key_filename
+            if isinstance(path, list):
+                path = path[0]
+            creds.key = os.path.expanduser(path)
 
     if upstream:
         srcs = executor.find_files(src, None, include=include, exclude=exclude)
@@ -102,7 +105,10 @@ def transfer_paths(paths, creds, upstream=True, tries=3,\
         if 'key' in creds:
             creds.key = os.path.expanduser(creds.key)
         if 'key_filename' in creds:
-            creds.key = os.path.expanduser(creds.key_filename[0])
+            path = creds.key_filename
+            if isinstance(path, list):
+                path = path[0]
+            creds.key = os.path.expanduser(path)
 
     __make_dirs(paths, creds, upstream)
     rsync = "rsync {} -e 'ssh"\
