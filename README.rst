@@ -8,7 +8,7 @@ How to install:
 `pip install parallel_sync`
 
 Requirement:
-- Python 2.7 Linux Only!
+- Python >=2.6 Linux Only!
 - ssh service must be installed and running.
 - To use the rsync features, you need to have rsync installed.
 - to use the url module, you need to install wget on the target machine

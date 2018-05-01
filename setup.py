@@ -18,11 +18,11 @@ import os
 from distutils import sysconfig;
 inc_path = sysconfig.get_config_vars()['INCLUDEPY']
 if not os.path.exists(os.path.join(inc_path, 'Python.h')):
-    raise Exception('You must install python headers to install the Paramiko dependency.'\
+    print('WARNING: You must install python headers to install the Paramiko dependency.'\
         '\nExample on ubuntu: sudo apt-get install python-dev'\
         '\nExample on centos: sudo yum install python-dev')
 
-version = '1.12.1'
+version = '1.13'
 import sys
 setup(
     name='parallel_sync',

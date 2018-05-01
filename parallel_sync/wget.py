@@ -5,8 +5,8 @@ import os
 import sys
 BASE_DIR = os.path.realpath(os.path.dirname(__file__))
 sys.path.append(os.path.realpath("{}/..".format(BASE_DIR)))
-import executor
-import compression
+from . import executor
+from . import compression
 TIMEOUT = 40
 
 def __url_to_filename(url):

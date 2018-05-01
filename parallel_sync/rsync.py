@@ -2,12 +2,12 @@
 This module copies files in parallel up or down stream
 from or to a remote host
 """
-from parallel_sync import executor
+from . import executor
 import os
 from bunch import Bunch
 from multiprocessing.pool import ThreadPool
 from functools import partial
-import compression
+from . import compression
 import logging
 logging.basicConfig(level='INFO')
 import hashlib
@@ -76,6 +76,7 @@ def transfer(src, dst, creds, upstream=True,\
         dst_path = path[len(src):]
         if dst_path.startswith('/'):
             dst_path = dst_path[1:]
+
         if dst.endswith('/'):
             dst = dst[:-1]
         dst_path = os.path.join(dst, dst_path)

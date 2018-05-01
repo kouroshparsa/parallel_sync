@@ -5,6 +5,7 @@ It can do operations in parallel batches as well
 """
 import os
 import sys
+from six import string_types
 from multiprocessing import Pool
 from functools import partial
 import logging
@@ -15,7 +16,11 @@ BASE_DIR = os.path.realpath(os.path.dirname(__file__))
 sys.path.append(os.path.realpath("{}/..".format(BASE_DIR)))
 import paramiko
 from bunch import Bunch
-import Queue
+try:
+    from Queue import Queue
+except: # python3
+    from queue import Queue
+
 import signal
 import re
 SSH_TIMEOUT = int(os.getenv('SSH_TIMEOUT', '10'))
@@ -50,7 +55,7 @@ def remote_batch(cmds, creds, curr_dir=None, parallelism=10):
     @curr_dir(optional): the currenct directory to run t he command from
     @parallelism: int - how many commands to run at the same time
     """
-    cmd_q = Queue.Queue()
+    cmd_q = Queue()
     for cmd in cmds:
         cmd_q.put(cmd)
 
@@ -93,6 +98,8 @@ def remote_batch(cmds, creds, curr_dir=None, parallelism=10):
         logging.info(cmd)
         stdout = client.exec_command(cmd)[1]
         output = stdout.read()
+        if not isinstance(output, string_types):
+            output = output.decode('utf-8') # because it is bytes in python3
         logging.info(output)
     client.close()
 
@@ -131,6 +138,9 @@ def remote(cmd, creds, curr_dir=None):
     client.close()
     if len(err) > 0:
         raise Exception(err)
+
+    if not isinstance(output, string_types):
+        output = output.decode('utf-8') # because it is bytes in python3
     return output
 
 
@@ -176,6 +186,8 @@ def _local(curr_dir, tries, cmd):
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output, err = proc.communicate()
         if proc.returncode == 0:
+            if not isinstance(output, string_types):
+                output = output.decode('utf-8') # python3 returns bytes
             return output
         logging.warn('Command failed: %s', cmd)
         logging.error(err)
@@ -281,7 +293,7 @@ def path_exists(path, creds=None):
     else:
         try:
             cmd = 'ls "{}"'.format(path)
-            print remote(cmd, creds)
+            print(remote(cmd, creds))
             return True
         except Exception as ex:
             if not 'cannot access' in str(ex):
