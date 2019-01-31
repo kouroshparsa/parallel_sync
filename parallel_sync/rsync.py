@@ -111,6 +111,12 @@ def transfer_paths(paths, creds, upstream=True, tries=3,\
                 path = path[0]
             creds.key = os.path.expanduser(path)
 
+    if creds.host in ['', None]:
+        if 'host_string' in creds and len(creds.host_string) > 0:
+            creds.host = creds.host_string
+        else:
+            raise Exception('The host is not specified.')
+
     __make_dirs(paths, creds, upstream)
     rsync = "rsync {} -e 'ssh"\
             " -o StrictHostKeyChecking=no"\
