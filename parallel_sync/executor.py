@@ -113,6 +113,15 @@ def remote(cmd, creds, curr_dir=None):
 
     client = paramiko.SSHClient()
     args = {'hostname':creds.host, 'username':creds.user}
+    if creds.host in ['', None]:
+        if 'host_string' in creds and len(creds.host_string) > 0:
+            args['hostname'] = creds.host_string
+        else:
+            raise Exception('The host is not specified.')
+
+    if creds.user in [None, '']:
+        raise Exception('The user is not specified.')
+
     if 'key_filename' in creds:
         path = creds.key_filename
         if isinstance(path, list):
