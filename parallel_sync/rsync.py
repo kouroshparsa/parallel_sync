@@ -213,7 +213,8 @@ def copy(src_dir, dst_dir, include=[], exclude=[], parallelism=10,\
 
 
 def _copyfile(src_dst):
-    shutil.copyfile(src_dst[0], src_dst[1])
+    if not os.path.exists(src_dst[1]) or not filecmp.cmp(src_dst[0], src_dst[1]):  # check if file already exists before overwriting.
+        shutil.copyfile(src_dst[0], src_dst[1])
 
 def local_copy(paths, parallelism=10, extract=False, validate=False):
     """
