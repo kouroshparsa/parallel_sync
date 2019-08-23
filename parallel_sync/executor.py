@@ -5,25 +5,27 @@ It can do operations in parallel batches as well
 """
 import os
 import sys
+import signal
+import re
 from six import string_types
 from multiprocessing import Pool
 from functools import partial
 import logging
 import subprocess
 import traceback
+import paramiko
+from bunch import Bunch
 logging.basicConfig(level='INFO')
 BASE_DIR = os.path.realpath(os.path.dirname(__file__))
 sys.path.append(os.path.realpath("{}/..".format(BASE_DIR)))
-import paramiko
-from bunch import Bunch
+
 try:
     from Queue import Queue
 except: # python3
     from queue import Queue
 
-import signal
-import re
 SSH_TIMEOUT = int(os.getenv('SSH_TIMEOUT', '10'))
+
 
 def run(cmds, creds=None, curr_dir=None, parallelism=10):
     """ runs commands on the remote machine in parallel
@@ -63,7 +65,13 @@ def remote_batch(cmds, creds, curr_dir=None, parallelism=10):
         creds = Bunch(creds)
 
     client = paramiko.SSHClient()
-    args = {'hostname':creds.host, 'username':creds.user}
+    args = {'hostname': creds.host, 'username': creds.user}
+    if creds.host in ['', None]:
+        raise Exception('Empty host.')
+
+    if creds.user in ['', None]:
+        raise Exception('Empty user.')
+
     if 'key_filename' in creds:
         path = creds.key_filename
         if isinstance(path, list):
@@ -77,6 +85,11 @@ def remote_batch(cmds, creds, curr_dir=None, parallelism=10):
 
     if 'password' in creds:
         args['password'] = creds.password
+
+    if 'key_filename' not in creds and\
+        'key' not in creds and\
+        'password' not in creds:
+        raise Exception('You need to specify a key_filename, or a key or a password')
 
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -174,9 +187,14 @@ def local_batch(cmds, curr_dir=None, tries=1, parallelism=10):
     pool.join()
 
 
-def local(cmd):
-    """ runs a command locally """
-    return _local(None, 1, cmd)
+def local(cmd, tries=1, curr_dir=None):
+    """
+    :param cmd: string, command to run
+    :param tries: int, number of times to try running the command
+    :param curr_dir: string, directory path
+    runs a command locally
+    """
+    return _local(curr_dir, tries, cmd)
 
 
 def _local(curr_dir, tries, cmd):

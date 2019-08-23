@@ -4,18 +4,18 @@ from or to a remote host
 """
 from . import executor
 import os
+import re
+import hashlib
+import shutil
 from bunch import Bunch
 from multiprocessing.pool import ThreadPool
 from functools import partial
-from . import compression
 import logging
 logging.basicConfig(level='INFO')
-import hashlib
-import shutil
-import re
 
-def upload(src, dst, creds,\
-    tries=3, include=[], exclude=[], parallelism=10, extract=False,\
+
+def upload(src, dst, creds,
+    tries=3, include=[], exclude=[], parallelism=10, extract=False,
     validate=False, additional_params='-c'):
     """
     @src, @dst: source and destination directories
@@ -28,22 +28,22 @@ def upload(src, dst, creds,\
         extract=extract, validate=validate, additional_params=additional_params)
 
 
-def download(src, dst, creds,\
-    tries=3, include=[], exclude=[], parallelism=10, extract=False,\
-    validate=False, additional_params='-c'):
+def download(
+    src, dst, creds, tries=3, include=[], exclude=[],
+    parallelism=10, extract=False, validate=False, additional_params='-c'):
     """
     @src, @dst: source and destination directories
     @creds: dict of credentials
     @validate: bool - if True, it will perform a checksum comparison after the operation
     @additional_params: str - additional parameters to pass on to rsync
     """
-    transfer(src, dst, creds, upstream=False,\
-        tries=tries, include=include, exclude=exclude, parallelism=parallelism, extract=extract,\
+    transfer(src, dst, creds, upstream=False,
+        tries=tries, include=include, exclude=exclude, parallelism=parallelism, extract=extract,
         validate=validate, additional_params=additional_params)
 
 
-def transfer(src, dst, creds, upstream=True,\
-    tries=3, include=[], exclude=[], parallelism=10, extract=False,\
+def transfer(src, dst, creds, upstream=True,
+    tries=3, include=[], exclude=[], parallelism=10, extract=False,
     validate=False, additional_params='-c'):
     """
     @src, @dst: source and destination directories
@@ -62,6 +62,7 @@ def transfer(src, dst, creds, upstream=True,\
                 path = path[0]
             creds.key = os.path.expanduser(path)
 
+    srcs = []
     if upstream:
         srcs = executor.find_files(src, None, include=include, exclude=exclude)
     else:
@@ -82,8 +83,8 @@ def transfer(src, dst, creds, upstream=True,\
         dst_path = os.path.join(dst, dst_path)
         paths.append((path, dst_path))
 
-    transfer_paths(paths, creds, upstream,\
-        tries=tries, parallelism=parallelism, extract=extract,\
+    transfer_paths(paths, creds, upstream,
+        tries=tries, parallelism=parallelism, extract=extract,
         validate=validate, additional_params=additional_params)
 
 
@@ -95,12 +96,15 @@ def __make_dirs(paths, creds, upstream):
         executor.make_dirs(dirs)
 
 
-def transfer_paths(paths, creds, upstream=True, tries=3,\
-    parallelism=10, extract=False,\
+def transfer_paths(paths, creds, upstream=True, tries=3,
+    parallelism=10, extract=False,
     validate=False, additional_params='-c'):
     """
     @paths: list of tuples of (source_path, dest_path)
     """
+    if len(paths) < 1:
+        raise Exception('You did not specify any paths/')
+
     if isinstance(creds, dict):
         creds = Bunch(creds)
         if 'key' in creds:
@@ -110,6 +114,8 @@ def transfer_paths(paths, creds, upstream=True, tries=3,\
             if isinstance(path, list):
                 path = path[0]
             creds.key = os.path.expanduser(path)
+    else:
+        raise Exception('You must provide the credentials.')
 
     if creds.host in ['', None]:
         if 'host_string' in creds and len(creds.host_string) > 0:
@@ -131,49 +137,77 @@ def transfer_paths(paths, creds, upstream=True, tries=3,\
         cmds.append(cmd)
 
     pool = ThreadPool(processes=parallelism)
-    func = partial(executor._local, None, tries)
+    func = partial(executor.local, tries=tries)
     pool.map(func, cmds)
     pool.close()
     pool.join()
 
+    if validate and len(paths) > 0:
+        validate_checksums(creds, upstream, parallelism, paths)
+
     if extract:
-        logging.info('File extraction...')
-        if upstream:
-            cmds = []
-            for _, path in paths:
-                if path.endswith('.gz'):
-                    cmds.append('gunzip "{}"'.format(path))
-            if len(cmds) > 0:
-                executor.remote_batch(cmds, creds)
-        else:
-            cmds = []
-            for _, path in paths:
-                if path.endswith('.gz'):
-                    cmds.append('gunzip "{}"'.format(path))
-            if len(cmds) > 0:
-                executor.local_batch(cmds)
+        extract_files(creds, upstream, paths)
 
-    if validate and len(srcs) > 0:
-        logging.info('Checksum validation...')
-        func = partial(checksum_validator, creds)
-        paths = []
-        if upstream:
-            paths = [(path, dests[ind]) for ind, path in enumerate(srcs)]
-        else:
-            paths = [(dests[ind], path) for ind, path in enumerate(srcs)]
 
-        pool.map(func, paths)
-        pool.close()
-        pool.join()
+def extract_files(creds, upstream, paths):
+    """
+    :param creds: dictionary
+    :param upstream: boolean
+    :param paths: list of tuples of (source_path, dest_path)
+    """
+    logging.info('File extraction...')
+    if upstream:  # local=source, remote=dest
+        cmds = []
+        for _, path in paths:
+            if path.endswith('.gz'):
+                cmds.append('gunzip "{}"'.format(path))
+        if len(cmds) > 0:
+            executor.remote_batch(cmds, creds)
+
+    else:  # local=dest, remote=source
+        cmds = []
+        for _, path in paths:
+            if path.endswith('.gz'):
+                cmds.append('gunzip "{}"'.format(path))
+        if len(cmds) > 0:
+            executor.local_batch(cmds)
+
+
+def validate_checksums(creds, upstream, parallelism, paths):
+    """
+    :param creds: a dictionary with the ssh credentials
+    :param upstream: boolean
+    :param paths: is a list of two paths: local path and remote path
+    if fails, it raises an Exception
+    """
+    logging.info('Checksum validation...')
+    func = partial(checksum_validator, creds)
+    # transform paths to be a pair of local and remote paths:
+    paths2 = []
+    if upstream:  # local=source, remote=dest
+        paths2 = [(src, dst) for src, dst in paths]
+
+    else:  # local=dest, remote=source
+        paths2 = [(dst, src) for src, dst in paths]
+
+    pool = ThreadPool(processes=parallelism)
+    pool.map(func, paths2)
+    pool.close()
+    pool.join()
 
 
 def checksum_validator(creds, paths):
+    """
+    :param creds: a dictionary with the ssh credentials
+    :param paths: is a list of two paths: local path and remote path
+    if fails, it raises an Exception
+    """
     local_path, remote_path = paths
     checksum1 = executor.local('md5sum "{}"'.format(local_path)).split(' ')[0]
     checksum2 = executor.remote('md5sum "{}"'.format(remote_path), creds=creds).split(' ')[0]
     if checksum1 != checksum2:
         raise Exception('checksum mismatch for %s' % paths)
-
+    logging.info('Verified: filename={} checksum={}'.format(os.path.basename(local_path), checksum1))
 
 
 def path_match(path, include=[], exclude=[]):
@@ -215,6 +249,7 @@ def copy(src_dir, dst_dir, include=[], exclude=[], parallelism=10,\
 def _copyfile(src_dst):
     shutil.copyfile(src_dst[0], src_dst[1])
 
+
 def local_copy(paths, parallelism=10, extract=False, validate=False):
     """
     @paths: list of tuples of (source_path, dest_path)
@@ -238,7 +273,7 @@ def local_copy(paths, parallelism=10, extract=False, validate=False):
             if path.endswith('.gz'):
                 executor.local_batch('gunzip "{}"'.format(path))
 
-    if validate and len(srcs) > 0:
+    if validate and len(paths) > 0:
         logging.info('Checksum validation...')
         func = partial(local_checksum_validator)
         pool.map(func, paths)

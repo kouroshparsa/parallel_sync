@@ -1,6 +1,6 @@
 """
-parallel_sync
------------
+**parallel_sync**
+
 
 parallel_sync is a python package for uploading or downloading files using multiprocessing and md5 checks on Linux.
 The files can be transferred from a remote linux host or a url.
@@ -13,17 +13,17 @@ Link
   https://github.com/kouroshparsa/parallel_sync
 
 """
-from setuptools import Command, setup, find_packages
+from setuptools import setup, find_packages
 import os
-from distutils import sysconfig;
+from distutils import sysconfig
+
 inc_path = sysconfig.get_config_vars()['INCLUDEPY']
 if not os.path.exists(os.path.join(inc_path, 'Python.h')):
     print('WARNING: You must install python headers to install the Paramiko dependency.'\
         '\nExample on ubuntu: sudo apt-get install python-dev'\
         '\nExample on centos: sudo yum install python-dev')
 
-version = '1.13.2'
-import sys
+version = '1.14'
 setup(
     name='parallel_sync',
     version=version,
@@ -35,7 +35,7 @@ setup(
     description='A Parallelized file/url syncing package',
     long_description=__doc__,
     packages=find_packages(),
-    install_requires = ['paramiko>=1.15.2', 'bunch>=1.0.1'],
+    install_requires = ['paramiko>=1.15.2', 'bunch>=1.0.1', 'six'],
     python_requires='>=2.6',
     include_package_data=True,
     zip_safe=False,

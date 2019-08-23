@@ -1,5 +1,4 @@
-parallel_sync
-==========
+**parallel_sync**
 
 parallel_sync is a python package for uploading or downloading files using multiprocessing and md5 checks on Linux.
 The files can be transferred from a remote linux host or a url.
