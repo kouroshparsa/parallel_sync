@@ -1,4 +1,3 @@
-import subprocess
 import os
 import logging
 from parallel_sync import executor
@@ -23,7 +22,7 @@ def extract(target_path, creds=None):
     @creds: a dictionary or Bunch object used for remote execution
     """
     if not executor.path_exists(target_path, creds):
-        logging.warn('Invalid path: %s' % target_path)
+        logging.warning('Invalid path: %s' % target_path)
         return
 
     cmds = []

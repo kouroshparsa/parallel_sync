@@ -3,6 +3,7 @@ This module is used for hashing files and folders
 """
 from parallel_sync import executor
 
+
 def get_md5(path, creds=None):
     """
     returns the md5sum of a file or directory

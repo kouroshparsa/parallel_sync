@@ -19,11 +19,11 @@ from distutils import sysconfig
 
 inc_path = sysconfig.get_config_vars()['INCLUDEPY']
 if not os.path.exists(os.path.join(inc_path, 'Python.h')):
-    print('WARNING: You must install python headers to install the Paramiko dependency.'\
-        '\nExample on ubuntu: sudo apt-get install python-dev'\
-        '\nExample on centos: sudo yum install python-dev')
+    print('WARNING: You must install python headers to install the Paramiko dependency.'
+          '\nExample on ubuntu: sudo apt-get install python-dev'
+          '\nExample on centos: sudo yum install python-dev')
 
-version = '1.14'
+version = '1.15'
 setup(
     name='parallel_sync',
     version=version,
@@ -35,7 +35,7 @@ setup(
     description='A Parallelized file/url syncing package',
     long_description=__doc__,
     packages=find_packages(),
-    install_requires = ['paramiko>=1.15.2', 'bunch>=1.0.1', 'six'],
+    install_requires=['paramiko>=1.15.2', 'bunch>=1.0.1', 'six'],
     python_requires='>=2.6',
     include_package_data=True,
     zip_safe=False,
@@ -45,4 +45,3 @@ setup(
         'Programming Language :: Python'
     ]
 )
-

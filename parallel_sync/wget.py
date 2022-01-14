@@ -5,9 +5,9 @@ import os
 import sys
 BASE_DIR = os.path.realpath(os.path.dirname(__file__))
 sys.path.append(os.path.realpath("{}/..".format(BASE_DIR)))
-from . import executor
-from . import compression
+from . import executor, compression
 TIMEOUT = 40
+
 
 def __url_to_filename(url):
     """ retrieves the filename from the url """
@@ -18,7 +18,7 @@ def __url_to_filename(url):
 
 
 def download(target_dir, urls, filenames=None,\
-    parallelism=10, creds=None, tries=3, extract=False):
+    parallelism=10, creds=None, tries=3, extract=False, timeout=TIMEOUT):
     """ downloads large files either locally or on a remote machine
     @target_dir: where to download to
     @urls: a list of urls or a single url
@@ -47,13 +47,12 @@ def download(target_dir, urls, filenames=None,\
         filenames = [filenames]
 
     if len(filenames) != len(urls):
-        raise Exception('You have specified filenames but the number of filenames '\
-            'does not match the number of urls')
+        raise Exception('You have specified filenames but the number of filenames does not match the number of urls')
 
     for ind, _url in enumerate(urls):
         filename = filenames[ind]
         file_path = os.path.join(target_dir, filename)
-        cmd = 'wget -O "{}" -t {} -T {} -q "{}"'.format(file_path, tries, TIMEOUT, _url)
+        cmd = 'wget -O "{}" -t {} -T {} -q "{}"'.format(file_path, tries, timeout, _url)
         if extract:
             ext = compression.get_unzip_cmd(file_path)
             if ext is not None:
