@@ -7,6 +7,7 @@ import os
 import re
 import hashlib
 import shutil
+import filecmp
 from bunch import Bunch
 from multiprocessing.pool import ThreadPool
 from functools import partial
@@ -14,9 +15,8 @@ import logging
 logging.basicConfig(level='INFO')
 
 
-def upload(src, dst, creds,
-    tries=3, include=[], exclude=[], parallelism=10, extract=False,
-    validate=False, additional_params='-c'):
+def upload(src, dst, creds, tries=3, include=[], exclude=[], parallelism=10, extract=False,
+           validate=False, additional_params='-c'):
     """
     @src, @dst: source and destination directories
     @creds: dict of credentials
@@ -29,17 +29,16 @@ def upload(src, dst, creds,
 
 
 def download(
-    src, dst, creds, tries=3, include=[], exclude=[],
-    parallelism=10, extract=False, validate=False, additional_params='-c'):
+    src, dst, creds, tries=3, include=[], exclude=[], parallelism=10, extract=False, validate=False,
+        additional_params='-c'):
     """
     @src, @dst: source and destination directories
     @creds: dict of credentials
     @validate: bool - if True, it will perform a checksum comparison after the operation
     @additional_params: str - additional parameters to pass on to rsync
     """
-    transfer(src, dst, creds, upstream=False,
-        tries=tries, include=include, exclude=exclude, parallelism=parallelism, extract=extract,
-        validate=validate, additional_params=additional_params)
+    transfer(src, dst, creds, upstream=False, tries=tries, include=include, exclude=exclude,
+             parallelism=parallelism, extract=extract, validate=validate, additional_params=additional_params)
 
 
 def transfer(src, dst, creds, upstream=True,
@@ -83,9 +82,8 @@ def transfer(src, dst, creds, upstream=True,
         dst_path = os.path.join(dst, dst_path)
         paths.append((path, dst_path))
 
-    transfer_paths(paths, creds, upstream,
-        tries=tries, parallelism=parallelism, extract=extract,
-        validate=validate, additional_params=additional_params)
+    transfer_paths(paths, creds, upstream, tries=tries, parallelism=parallelism, extract=extract,
+                   validate=validate, additional_params=additional_params)
 
 
 def __make_dirs(paths, creds, upstream):
@@ -96,9 +94,8 @@ def __make_dirs(paths, creds, upstream):
         executor.make_dirs(dirs)
 
 
-def transfer_paths(paths, creds, upstream=True, tries=3,
-    parallelism=10, extract=False,
-    validate=False, additional_params='-c'):
+def transfer_paths(paths, creds, upstream=True, tries=3, parallelism=10, extract=False,
+                   validate=False, additional_params='-c'):
     """
     @paths: list of tuples of (source_path, dest_path)
     """
@@ -124,10 +121,11 @@ def transfer_paths(paths, creds, upstream=True, tries=3,
             raise Exception('The host is not specified.')
 
     __make_dirs(paths, creds, upstream)
-    rsync = "rsync {} -e 'ssh"\
-            " -o StrictHostKeyChecking=no"\
-            " -o ServerAliveInterval=100"\
-            " -i {}'".format(additional_params, creds.key)
+    rsync = "rsync {} -e 'ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=100'".format(additional_params)
+
+    if 'key' in creds:
+        rsync = "rsync {} -e 'ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=100" \
+                " -i {}'".format(additional_params, creds.key)
 
     cmds = []
     for src, dst in paths:
@@ -242,8 +240,7 @@ def copy(src_dir, dst_dir, include=[], exclude=[], parallelism=10,\
                     dst = os.path.join(dst_dir, x)
                     paths.append((path, dst))
 
-    local_copy(paths, parallelism=parallelism,\
-        extract=extract, validate=validate)
+    local_copy(paths, parallelism=parallelism, extract=extract, validate=validate)
 
 
 def _copyfile(src_dst):

@@ -124,8 +124,7 @@ def remote(cmd, creds, curr_dir=None):
     if isinstance(creds, dict):
         creds = Bunch(creds)
 
-    client = paramiko.SSHClient()
-    args = {'hostname':creds.host, 'username':creds.user}
+    args = {'hostname': creds.host, 'username': creds.user}
     if creds.host in ['', None]:
         if 'host_string' in creds and len(creds.host_string) > 0:
             args['hostname'] = creds.host_string
