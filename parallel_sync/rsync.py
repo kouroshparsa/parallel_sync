@@ -252,7 +252,9 @@ def local_copy(paths, parallelism=10, extract=False, validate=False):
     """
     @paths: list of tuples of (source_path, dest_path)
     """
+    srcs = []
     for src, dst in paths:
+        srcs.append(src)
         dst_dir = os.path.dirname(os.path.expanduser(dst))
         if not os.path.exists(dst_dir):
             os.makedirs(dst_dir)
