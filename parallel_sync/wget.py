@@ -2,14 +2,11 @@
 This module manages file operations such as parallel download
 """
 import os
-import sys
-BASE_DIR = os.path.realpath(os.path.dirname(__file__))
-sys.path.append(os.path.realpath("{}/..".format(BASE_DIR)))
-from . import executor, compression
+from . import executor, compression, Credential
 TIMEOUT = 40
 
 
-def __url_to_filename(url):
+def __url_to_filename(url: str):
     """ retrieves the filename from the url """
     filename = os.path.basename(url).strip()
     if filename.endswith('?'):
@@ -17,47 +14,43 @@ def __url_to_filename(url):
     return filename
 
 
-def download(target_dir, urls, filenames=None,\
-    parallelism=10, creds=None, tries=3, extract=False, timeout=TIMEOUT):
-    """ downloads large files either locally or on a remote machine
+def download(creds: Credential, target_dir: str, urls: list,
+             filenames: list=None, parallelism: int=10, tries: int=3,
+             extract: bool=False, timeout: int=TIMEOUT):
+    """ downloads large files on a remote machine
+    @creds: ssh credentials
     @target_dir: where to download to
     @urls: a list of urls or a single url
     @filenames: list of filenames. If used, the the urls will be downloaded to
         those file names
     @parallelism(default=10): number of parallel processes to use
-    @creds: dictionary with credentials
-        if None, it will download locally
-        if not None, then wget command will be run on a remote host
     @extract: boolean - whether to extract tar or zip files after download
     """
     if isinstance(urls, str):
         urls = [urls]
 
     if not isinstance(urls, list):
-        raise Exception('Expected a list of urls. Received %s' % urls)
+        raise ValueError(f'Expected a list of urls. Received {urls}')
 
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
 
     cmds = []
-    if filenames is None:
-        filenames = [__url_to_filename(_url) for _url in urls]
+    if filenames is not None and len(filenames) != len(urls):
+        raise ValueError('You have specified filenames but the number '\
+                        'of filenames does not match the number of urls')
 
-    if isinstance(filenames, str):
-        filenames = [filenames]
-
-    if len(filenames) != len(urls):
-        raise Exception('You have specified filenames but the number of filenames does not match the number of urls')
-
+    filenames = [__url_to_filename(url) for url in urls]
     for ind, _url in enumerate(urls):
         filename = filenames[ind]
-        file_path = os.path.join(target_dir, filename)
-        cmd = 'wget -O "{}" -t {} -T {} -q "{}"'.format(file_path, tries, timeout, _url)
+        file_path = f'{target_dir}/{filename}'
+        cmd = f'wget -O "{file_path}" -t {tries} -T {timeout} "{_url}"'
+        # note: don't use the -q option because
+        # if it fails, you don't get any message or return code
         if extract:
             ext = compression.get_unzip_cmd(file_path)
             if ext is not None:
-                cmd = '{};cd "{}";{} "{}"'.format(cmd, target_dir, ext, filename)
+                cmd = f'{cmd};cd "{target_dir}";{ext} "{filename}"'
         cmds.append(cmd)
-    executor.run(cmds, parallelism=parallelism, curr_dir=target_dir, creds=creds)
-
-
+    
+    executor.run_remote_batch(cmds, creds, curr_dir=target_dir, parallelism=parallelism)

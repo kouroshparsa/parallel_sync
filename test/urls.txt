@@ -1,2 +1,0 @@
-https://www.rpelectronics.com/Media/rp-logo.png
-http://pkgs.fedoraproject.org/repo/pkgs/ldd-pdf/examples.tar.gz/md5/330d478a64fea5f772645c3728a4e2df/examples.tar.gz

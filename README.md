@@ -1,18 +1,22 @@
-**parallel_sync**
+# V2.x parallel_sync Documentation
 
-parallel_sync is a python package for uploading or downloading files using multiprocessing and md5 checks on Linux.
-The files can be transferred from a remote linux host or a url.
+Documentation for the older versions of the package are at: <a href="./V1_Doc.md">V1_Doc</a>
+
+**Introduction**
+
+parallel_sync is a python package for uploading or downloading files using multiprocessing and md5 checks. It can do operations such as rsync, scp, wget.
+It can use used on both Windows and Linux and Mac OS. Note that on Windows, you need to have OpenSsh enabled and the package will automaticalled use scp instead of rsync.
 
 **How to install:**
 
 `pip install parallel_sync`
 
 **Requirement:**
-- Python >=2.6 Linux Only!
+- Python >= 3
 - ssh service must be installed and running.
-- To use the rsync features, you need to have rsync installed.
-- to use the url module, you need to install wget on the target machine
-- To untar/unzip files you need tar/zip packages installed
+- if rsync is installed on the local machine, it will be used, otherwise it will fall back to using scp.
+- To use the wget method, you need to install wget on the target machine
+- To untar/unzip files you need tar/zip packages installed on the target machine
 
 **Benefits:**
 - Very fast file transfer (parallelized)
@@ -21,16 +25,19 @@ The files can be transferred from a remote linux host or a url.
 - It can handle large files
 
 In most of the examples below, you can specify `parallelism` and `tries` which allow you to parallelize tasks and retry upon failure.
-By default `parallelism` is set to 10 workers.
+By default `parallelism` is set to 10 workers and tries is 1.
 
-Upstream Example:
+## Upstream Example:
 ```python
-from parallel_sync import rsync
-creds = {'user': 'myusername', 'key':'~/.ssh/id_rsa', 'host':'192.168.16.31'}
+from parallel_sync import rsync, Credential
+creds = Credential(username='user',
+     hostname='192.168.168.9',
+     port=3022,
+     key_filename='~/.ssh/id_rsa')
 rsync.upload('/tmp/x', '/tmp/y', creds=creds, exclude=['*.pyc', '*.sh'])
 ```
 
-Downstream Example:
+## Downstream Example:
 
 ```python
 from parallel_sync import rsync
@@ -38,88 +45,52 @@ creds = {'user': 'myusername', 'key':'~/.ssh/id_rsa', 'host':'192.168.16.31'}
 rsync.download('/tmp/y', '/tmp/z', creds=creds)
 ```
 
-File Download Example:
-
+## Using non-default Ports
 ```python
-from parallel_sync import wget
+from parallel_sync import rsync, Credential
+creds = Credential(username='user',
+     hostname='192.168.168.9',
+     port=3022,
+     key_filename='~/.ssh/id_rsa')
+rsync.download('/tmp/y', '/tmp/z', creds=creds)
+```
+
+
+## Downloading files on a remote machine:
+
+For this, you need to have wget installed on the remote machine.
+```python
+from parallel_sync import wget, Credential
+creds = Credential(username='user',
+     hostname='192.168.168.9',
+     port=3022,
+     key_filename='~/.ssh/id_rsa')
 urls = ['http://something.png', 'http://somthing.tar.gz', 'http://somthing.zip']
-wget.download('/tmp', urls=urls, extract=True)
-
-# download locally with a specified filename:
-
-wget.download(LOCAL_TARGET, 'http://something/else/file.zip',\
-              filenames='x.zip', extract=True)
-
-# download on a remote machine:
-
-creds = {'user': 'myusername', 'key':'~/.ssh/id_rsa', 'host':'192.168.16.31'}
 wget.download('/tmp', urls=urls, creds=creds)
-
-# To untar or unzip compressed files after download:
-wget.download('/tmp', urls=urls, creds=creds, extract=True)
 ```
 
-Example extracting a file on a remote host:
-
+## Downloading files on the local machine
+Downloading files using requests package locally is simple but what if you want to parallelize it?
+Here is the solution for that:
 ```python
-creds = {'user': 'myusername', 'key':'~/.ssh/id_rsa', 'host':'192.168.16.31'}
-from parallel_sync import compression
-compression.extract('/tmp/x.tar.gz', creds=creds)
+from parallel_sync import downloader
+urls = ['http://something1', 'http://somthing2', 'http://somthing3']
+download('c:/temp/x',
+    extension='.png', parallelism=10)
 ```
 
-Example checking that a files exists on the remote server:
-
-```python
-from parallel_sync import executor
-creds = {'user': 'myusername', 'key':'~/.ssh/id_rsa', 'host':'192.168.16.31'}
-path = '/tmp/myfile'
-if executor.path_exists(path, creds):
-    print("yes")
+## Integration with Fabric:
 ```
+from fabric import task
+from parallel_sync import rsync, wget, get_fabric_credentials
 
-Example finding files or directories on a remote server:
-
-```python
-from parallel_sync import executor
-creds = {'user': 'myusername', 'key':'~/.ssh/id_rsa', 'host':'192.168.16.31'}
-dir_path = '/tmp/mydir'
-files = executor.find_files(dir_path, creds, include=['*.png', '*.jpg'])
-
-dirs = executor.find_dirs(dir_path, creds, include=['test'])
-
-# Note that if creds is None, then it will search on localhost
+@task
+def deploy(conn):
+    creds = get_fabric_credentials(conn)
+    urls = ['http://something1', 'http://somthing2', 'http://somthing3']
+    wget.download(creds, '/tmp/images', urls)
+    rsync.upload('/src', '/dst', creds, tries=3)
 ```
-
-Example Running commands:
-
-```python
-from parallel_sync import executor
-
-cmds = ['mv /tmp/x /tmp/y', 'touch /tmp/z']
-creds = {'user': 'myusername', 'key':'~/.ssh/id_rsa', 'host':'192.168.16.31'}
-executor.run(cmds, creds=creds, parallelism=len(cmds))
-
-print(executor.run('pwd', creds=creds, curr_dir='/tmp'))
-```
-
-Example using parallel_sync within fabric:
-
-```python
-from fabric.api import env
-from parallel_sync import rsync
-
-rsync.upload('/tmp/x', '/tmp/y', creds=env)
-rsync.download('/tmp/y', '/tmp/z', creds=env)
-```
-
-To transfer files locally:
-
-```python
-from parallel_sync import rsync
-rsync.copy('/tmp/x', '/tmp/y', exclude=['*.pyc'], parallelism=10, extract=False, validate=False)
-```
-
-where /tmp/x is a directory.
 
 
 If you come across any bugs, please report it on github.

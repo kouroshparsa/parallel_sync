@@ -1,5 +1,0 @@
-download_md5: 'd996727ec4100cdf87b522e35029ed8a'
-download_md5_extracted: 'cbded7d7f3fa6fe0b969de79dc606053'
-creds: {'user': '', 'key':'', 'host':''}
-zip_url: 'https://clinicaltrials.gov/ct2/results/download?down_stds=all&down_typ=results&down_flds=all&down_fmt=xml&recr=Open&cntry1=NA%3ACA&state1=NA%3ACA%3ABC&show_down=Y'
-
