@@ -92,5 +92,9 @@ def deploy(conn):
     rsync.upload('/src', '/dst', creds, tries=3)
 ```
 
+Here you have a task called deploy. You can run it using the following command:
+```
+fab [user]@[hostname]:[port] -i [path to you key file] deploy
+```
 
 If you come across any bugs, please report it on github.
