@@ -50,8 +50,8 @@ def __transfer(src: str, dst: str, creds: Credential, upstream: bool=True,
     """
     @src: str path of a file or folder for source
     @dst: path of a file or folder for destination
-    @creds: dict ofsshm: bool, True means upload, False means download
-    @upstream: bool, whether it is upload or not (then it is download)
+    @creds: ssh credentials
+    @upstream: bool, whether it is upload or not (False means download)
     @tries: int, how many times to try
     @include: wild card pattern
     @exclude: list of wild card patterns
@@ -104,7 +104,7 @@ def __get_dst_path(src: str, src_path:str, dst_dir: str):
     """
     postfix = src_path[len(src):]
     if len(postfix) < 1: # src must be a file
-        postfix = os.path.basename(src)
+        postfix = src.replace('\\', '/').split('/')[-1]
 
     if postfix.startswith('/') or postfix.startswith('\\'):
         postfix = postfix[1:]

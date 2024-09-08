@@ -55,7 +55,11 @@ def run_remote_batch(cmds: list, creds: Credential, curr_dir: str=None, parallel
     """
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(**creds.__dict__)
+    try:
+        client.connect(**creds.__dict__)
+    except TimeoutError:
+        raise Exception(f"Failed to connect to {creds.hostname}. Attempt timed out.")
+    
     ind = 0
     while ind <len(cmds):
         cmd = '(%s)' % ') & ('.join(cmds[ind:ind+parallelism])
